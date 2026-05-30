@@ -251,7 +251,7 @@ streamlit run app.py
 
 ---
 
-## Autor
+## Autores
 
 * Taufic Yusef Rapag Padilla
 * Alejandra Tuiran Ospino
