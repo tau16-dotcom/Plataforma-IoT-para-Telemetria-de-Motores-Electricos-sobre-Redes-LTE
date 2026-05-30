@@ -283,6 +283,9 @@ La arquitectura implementada demuestra la viabilidad de integrar tecnologías Io
 
 # Autor
 
-* Taufic Yusef Rapag Padilla * Alejandra Tuiran Ospino * Sebastian Pupo Solano * Alejandro Rovira Brieva
+* Taufic Yusef Rapag Padilla
+* Alejandra Tuiran Ospino
+* Sebastian Pupo Solano
+* Alejandro Rovira Brieva
 
 Proyecto académico de Ingeniería Electrónica.
