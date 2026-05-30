@@ -223,9 +223,9 @@ El sistema permite monitorear remotamente variables críticas del motor eléctri
 
 ## Autores
 
-Taufic Yusef Rapag Padilla
-Alejandra Tuiran Ospino
-Sebastian Pupo Solano
-Alejandro Rovira Brieva
+* Taufic Yusef Rapag Padilla
+* Alejandra Tuiran Ospino
+* Sebastian Pupo Solano
+* Alejandro Rovira Brieva
 
 Proyecto académico de Ingeniería Electrónica.
