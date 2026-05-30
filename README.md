@@ -1,5 +1,5 @@
 # Sistema IoT para Monitoreo Remoto de Motores Eléctricos mediante Comunicación LTE
-
+http://3.150.75.105:8501/
 ## Descripción
 
 Este proyecto presenta el diseño e implementación de una plataforma IoT para el monitoreo remoto de motores eléctricos utilizando comunicación celular LTE y servicios cloud.
