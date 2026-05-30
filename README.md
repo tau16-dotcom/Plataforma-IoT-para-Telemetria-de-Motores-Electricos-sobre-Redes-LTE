@@ -210,7 +210,6 @@ firmware/
 backend/
 dashboard/
 docs/
-images/
 ```
 
 ---
