@@ -1,46 +1,98 @@
 # Diagnóstico LTE
 
-El firmware incorpora un sistema de diagnóstico que evalúa continuamente la calidad de la comunicación.
+## Objetivo
 
-## Parámetros
+Verificar el estado de la comunicación antes de iniciar la transmisión de datos.
 
-### RSSI
+---
+
+# RSSI
 
 Comando:
 
 AT+CSQ
 
-Conversión:
+Conversión utilizada:
 
 RSSI(dBm) = -113 + 2 × CSQ
 
-### BER
+### Clasificación
 
-Bit Error Rate.
+| RSSI | Calidad |
+|--------|--------|
+| > -70 dBm | Excelente |
+| -70 a -85 dBm | Buena |
+| -85 a -100 dBm | Regular |
+| < -100 dBm | Mala |
 
-### Operador
+---
+
+# BER
+
+Bit Error Rate reportado por la red celular.
+
+Comando:
+
+AT+CSQ
+
+---
+
+# Operador
+
+Comando:
 
 AT+COPS?
 
-### Tecnología
+Ejemplo:
 
-- GSM
-- UTRAN
-- LTE
-- NR
+Movistar Colombia
 
-### IP Asignada
+---
+
+# Tecnología
+
+El sistema identifica:
+
+- GSM (2G)
+- UTRAN (3G)
+- LTE (4G)
+- NR (5G)
+
+---
+
+# Dirección IP
+
+Comando:
 
 AT+CGPADDR
 
-### ICCID
+Permite verificar que el contexto PDP fue activado correctamente.
 
-AT+ICCID
+---
 
-### IMEI
+# Identificación del Módulo
+
+## IMEI
 
 AT+CGSN
 
-### Latencia
+## ICCID
 
-HTTP GET al servidor para estimar RTT.
+AT+ICCID
+
+---
+
+# Latencia
+
+Se realiza una solicitud HTTP GET hacia el servidor.
+
+La diferencia entre el tiempo de envío y recepción permite estimar el RTT de la comunicación.
+
+---
+
+# Beneficios del Diagnóstico
+
+- Verificación de cobertura.
+- Detección de fallas.
+- Validación de acceso a Internet.
+- Confirmación de conexión con el servidor.
