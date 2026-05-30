@@ -1,101 +1,226 @@
-# Sistema de Monitoreo No Invasivo para Motores Eléctricos mediante IoT y Comunicación LTE
+# Sistema IoT de Monitoreo Remoto para Motores Eléctricos mediante Comunicación LTE
 
-## Descripción General
+## Descripción
 
-Este proyecto implementa un sistema IoT para el monitoreo remoto y no invasivo de motores eléctricos mediante la adquisición de variables críticas de operación, específicamente temperatura y corriente RMS. La solución permite supervisar el estado del motor en tiempo real desde cualquier ubicación con acceso a Internet, facilitando la detección temprana de condiciones anómalas y contribuyendo a estrategias de mantenimiento predictivo.
+Este proyecto presenta el diseño e implementación de un sistema IoT para el monitoreo remoto de motores eléctricos utilizando comunicación celular LTE.
 
-El sistema está compuesto por un nodo embebido basado en ESP32, sensores de temperatura y corriente, un módulo de comunicación celular LTE A7608SA-H, una infraestructura de almacenamiento y procesamiento en la nube sobre Amazon Web Services (AWS), y una interfaz web desarrollada en Streamlit para la visualización de los datos.
+La solución permite adquirir variables operativas críticas del motor, transmitirlas mediante una red celular hacia una infraestructura en la nube y visualizarlas en tiempo real a través de una plataforma web.
 
----
+A diferencia de los sistemas de monitoreo tradicionales basados en redes locales o Wi-Fi, esta propuesta utiliza comunicación LTE mediante el módulo A7608SA-H, permitiendo supervisar equipos ubicados en zonas remotas sin depender de infraestructura de red existente.
 
-## Objetivos
-
-### Objetivo General
-
-Diseñar e implementar un sistema IoT para el monitoreo remoto no invasivo de motores eléctricos mediante la adquisición, transmisión, almacenamiento y visualización de variables de operación.
-
-### Objetivos Específicos
-
-* Medir la corriente RMS del motor utilizando sensores de corriente AC no invasivos.
-* Supervisar la temperatura ambiente y la temperatura superficial del motor.
-* Transmitir datos mediante comunicación celular LTE.
-* Implementar un backend para recepción y almacenamiento de información.
-* Desarrollar una interfaz gráfica para visualización en tiempo real.
-* Generar alertas ante condiciones anormales de operación.
+El sistema está compuesto por un nodo de adquisición basado en ESP32, sensores industriales, un módulo de comunicación LTE, una infraestructura de procesamiento en AWS y una interfaz de visualización desarrollada en Streamlit.
 
 ---
 
-## Arquitectura del Sistema
+# Objetivo General
+
+Diseñar e implementar un sistema IoT para el monitoreo remoto de motores eléctricos mediante comunicación LTE, permitiendo la adquisición, transmisión, almacenamiento y visualización de variables operativas en tiempo real.
+
+---
+
+# Características Principales
+
+✅ Comunicación LTE independiente de redes Wi-Fi.
+
+✅ Monitoreo remoto desde cualquier ubicación.
+
+✅ Adquisición de corriente RMS.
+
+✅ Monitoreo de temperatura ambiente.
+
+✅ Monitoreo de temperatura superficial del motor.
+
+✅ Almacenamiento histórico de datos.
+
+✅ Dashboard web en tiempo real.
+
+✅ Arquitectura basada en servicios cloud.
+
+✅ Detección de pérdida de comunicación.
+
+---
+
+# Arquitectura General
 
 ```text
-┌─────────────────┐
-│ Motor Eléctrico │
-└────────┬────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ Sensores                   │
-│ • Corriente RMS (SCT-013)  │
-│ • Temperatura              │
-└────────┬───────────────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ ESP32                      │
-│ Procesamiento Local        │
-└────────┬───────────────────┘
-         │ UART
-         ▼
-┌────────────────────────────┐
-│ Módulo LTE A7608SA-H       │
-└────────┬───────────────────┘
-         │
-         ▼
-      Internet
-         │
-         ▼
-┌────────────────────────────┐
-│ AWS EC2                    │
-│ Backend Node.js            │
-└────────┬───────────────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ SQLite                     │
-│ Almacenamiento Histórico   │
-└────────┬───────────────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ Dashboard Streamlit        │
-└────────────────────────────┘
+┌─────────────────────────┐
+│     Motor Eléctrico     │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ Sensores                │
+│                         │
+│ SCT-013                 │
+│ MLX90614                │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ ESP32                   │
+│ Procesamiento Local     │
+└────────────┬────────────┘
+             │ UART
+             ▼
+┌─────────────────────────┐
+│ A7608SA-H LTE           │
+│ Comunicación Celular    │
+└────────────┬────────────┘
+             │
+             ▼
+         Internet
+             │
+             ▼
+┌─────────────────────────┐
+│ AWS EC2                 │
+│ Ubuntu Server           │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ Backend Node.js         │
+│ API REST                │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ SQLite                  │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ Dashboard Streamlit     │
+└─────────────────────────┘
 ```
 
 ---
 
-## Tecnologías Utilizadas
+# Comunicación LTE
 
-### Hardware
+La comunicación remota constituye el núcleo de la solución.
 
-* ESP32
-* Sensor de corriente SCT-013
-* Sensor de temperatura infrarrojo
-* Módulo LTE A7608SA-H
+El sistema emplea un módulo LTE A7608SA-H conectado al ESP32 mediante interfaz UART.
 
-### Software
+Las variables adquiridas son encapsuladas en formato JSON y transmitidas mediante solicitudes HTTP hacia un servidor desplegado en AWS EC2.
 
-* Arduino IDE
-* Python
-* Streamlit
-* Node.js
-* Express.js
-* SQLite
-* AWS EC2
-* Ubuntu Server 24.04 LTS
+Esta arquitectura permite:
+
+- Operación en ubicaciones remotas.
+- Eliminación de dependencia de redes Wi-Fi.
+- Cobertura geográfica ampliada.
+- Monitoreo en tiempo real.
+- Escalabilidad para múltiples dispositivos.
 
 ---
 
-## Estructura del Repositorio
+# Hardware Utilizado
+
+## ESP32
+
+Microcontrolador encargado de:
+
+- Adquisición de sensores.
+- Procesamiento local.
+- Cálculo RMS.
+- Gestión de comunicaciones.
+
+## SCT-013
+
+Sensor de corriente no invasivo utilizado para medir el consumo eléctrico del motor.
+
+Características:
+
+- Medición AC.
+- Transformador de corriente.
+- Instalación sin modificar el circuito de potencia.
+
+## MLX90614
+
+Sensor infrarrojo utilizado para monitorear:
+
+- Temperatura ambiente.
+- Temperatura superficial del motor.
+
+Características:
+
+- Comunicación I2C.
+- Medición sin contacto.
+- Alta precisión.
+
+## A7608SA-H
+
+Módulo LTE utilizado para:
+
+- Conexión a Internet mediante red celular.
+- Transmisión HTTP.
+- Comunicación remota con el servidor.
+
+---
+
+# Procesamiento de Corriente
+
+La corriente adquirida mediante el SCT-013 es procesada en el ESP32 para obtener el valor RMS.
+
+Fórmula utilizada:
+
+I_RMS = √[(1/N) Σ(Ii²)]
+
+Donde:
+
+- Ii corresponde a cada muestra adquirida.
+- N es el número total de muestras.
+
+El cálculo RMS permite estimar la carga eléctrica del motor y detectar variaciones de consumo.
+
+---
+
+# Infraestructura Cloud
+
+La solución utiliza Amazon Web Services (AWS).
+
+## Servidor
+
+- Amazon EC2
+- Ubuntu Server 24.04 LTS
+
+## Servicios Ejecutados
+
+### Backend
+
+Node.js + Express
+
+Funciones:
+
+- Recepción de datos.
+- API REST.
+- Almacenamiento.
+- Consulta histórica.
+
+### Base de Datos
+
+SQLite
+
+Variables almacenadas:
+
+- Temperatura ambiente.
+- Temperatura del motor.
+- Corriente RMS.
+- Marca temporal.
+
+### Dashboard
+
+Streamlit
+
+Funciones:
+
+- Visualización en tiempo real.
+- Históricos.
+- Estado del sistema.
+- Detección de pérdida de señal.
+
+---
+
+# Estructura del Repositorio
 
 ```text
 SISTEMA-DE-MONITOREO-no-invasivo-MOTOR
@@ -113,6 +238,11 @@ SISTEMA-DE-MONITOREO-no-invasivo-MOTOR
 │   └── requirements.txt
 │
 ├── docs/
+│   ├── api.md
+│   ├── aws.md
+│   ├── arquitectura.md
+│   ├── hardware.md
+│   └── medicion_corriente.md
 │
 ├── images/
 │
@@ -123,109 +253,36 @@ SISTEMA-DE-MONITOREO-no-invasivo-MOTOR
 
 ---
 
-## Funcionamiento
-
-1. El ESP32 adquiere las señales provenientes de los sensores.
-2. Se calcula el valor RMS de la corriente consumida por el motor.
-3. Se registran las temperaturas medidas.
-4. Los datos son encapsulados en formato JSON.
-5. El módulo LTE transmite la información al servidor AWS mediante HTTP.
-6. El backend Node.js recibe y almacena la información en SQLite.
-7. Streamlit consulta la base de datos y presenta los datos en tiempo real.
-8. El usuario puede visualizar tendencias históricas y el estado actual del sistema.
-
----
+# Instalación
 
 ## Backend
 
-El servidor implementado en Node.js recibe las solicitudes HTTP provenientes del dispositivo IoT.
-
-Funciones principales:
-
-* Recepción de datos.
-* Validación de información.
-* Almacenamiento en SQLite.
-* Consulta de última lectura.
-* Consulta de histórico de datos.
-
----
+```bash
+cd backend
+npm install
+node server.js
+```
 
 ## Dashboard
 
-El dashboard desarrollado en Streamlit permite:
-
-* Visualización de temperatura ambiente.
-* Visualización de temperatura del motor.
-* Visualización de corriente RMS.
-* Consulta histórica de mediciones.
-* Detección de pérdida de comunicación.
-* Monitoreo remoto en tiempo real.
-
----
-
-## Base de Datos
-
-Se utiliza SQLite para almacenar:
-
-* Temperatura ambiente.
-* Temperatura del motor.
-* Corriente RMS.
-* Marca temporal de cada medición.
-
----
-
-## Despliegue en la Nube
-
-La infraestructura se encuentra desplegada en Amazon Web Services (AWS) utilizando una instancia EC2 con Ubuntu Server.
-
-Servicios implementados:
-
-* Backend Node.js
-* Base de datos SQLite
-* Dashboard Streamlit
-
----
-
-## Capturas del Proyecto
-
-### Dashboard
-
-Agregar imagen en:
-
-```text
-images/dashboard.png
+```bash
+cd dashboard
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
-### Montaje Experimental
+---
 
-Agregar imagen en:
+# Resultados
 
-```text
-images/montaje.jpg
-```
+El sistema permite supervisar remotamente el estado operativo de motores eléctricos mediante comunicación LTE, proporcionando acceso a información en tiempo real desde cualquier ubicación con cobertura celular.
 
-### Hardware Implementado
-
-Agregar imágenes de:
-
-* ESP32
-* Módulo LTE
-* Sensores
-* Sistema final instalado
+La arquitectura implementada demuestra la viabilidad de integrar tecnologías IoT, comunicaciones móviles y servicios cloud para aplicaciones de monitoreo industrial y mantenimiento predictivo.
 
 ---
 
-## Resultados
+# Autor
 
-El sistema permite monitorear remotamente variables críticas del motor eléctrico sin necesidad de modificar la instalación eléctrica existente, proporcionando una solución escalable para aplicaciones de mantenimiento predictivo e Industria 4.0.
-
----
-
-## Autores
-
-* Taufic Yusef Rapag Padilla
-* Alejandra Tuiran Ospino
-* Sebastian Pupo Solano
-* Alejandro Rovira Brieva
+* Taufic Yusef Rapag Padilla * Alejandra Tuiran Ospino * Sebastian Pupo Solano * Alejandro Rovira Brieva
 
 Proyecto académico de Ingeniería Electrónica.
