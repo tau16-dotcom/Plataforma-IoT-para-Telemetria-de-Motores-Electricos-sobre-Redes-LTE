@@ -281,7 +281,7 @@ La arquitectura implementada demuestra la viabilidad de integrar tecnologías Io
 
 ---
 
-# Autor
+# Autores
 
 * Taufic Yusef Rapag Padilla
 * Alejandra Tuiran Ospino
