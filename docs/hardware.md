@@ -1,50 +1,78 @@
-# Hardware Utilizado
+# Hardware Implementado
 
 ## ESP32
 
-Microcontrolador encargado de:
+Microcontrolador principal encargado de la adquisición, procesamiento y transmisión de datos.
 
-- Adquisición de sensores.
-- Procesamiento local.
+### Funciones
+
+- Lectura de sensores.
 - Cálculo RMS.
-- Gestión de comunicaciones LTE.
+- Gestión de comunicaciones.
+- Generación de mensajes JSON.
+- Control del módulo LTE.
 
 ---
 
-## MLX90614
+# Sensor de Corriente SCT-013
 
-Sensor infrarrojo de temperatura.
+El SCT-013 es un transformador de corriente (CT) no invasivo utilizado para medir el consumo eléctrico del motor.
 
-Variables medidas:
+### Ventajas
+
+- No requiere modificar el circuito de potencia.
+- Instalación sencilla.
+- Aislamiento galvánico.
+
+### Variable Medida
+
+Corriente RMS (A).
+
+---
+
+# Sensor de Temperatura MLX90614
+
+Sensor infrarrojo de temperatura sin contacto.
+
+### Comunicación
+
+I2C.
+
+### Variables
 
 - Temperatura ambiente.
 - Temperatura superficial del motor.
 
-Comunicación:
+### Ventajas
 
-I2C
-
----
-
-## SCT-013
-
-Sensor de corriente no invasivo.
-
-Características:
-
-- Medición AC.
-- Transformador de corriente.
-- Instalación sin intervenir el circuito de potencia.
+- No requiere contacto físico.
+- Alta precisión.
+- Adecuado para superficies calientes.
 
 ---
 
-## A7608SA-H
+# Módulo LTE A7608SA-H
 
-Módulo LTE utilizado para la transmisión remota de datos.
+Módulo de comunicación celular utilizado para transmitir los datos hacia AWS.
 
-Funciones:
+### Funciones
 
-- Conexión a red celular.
+- Registro en red móvil.
+- Gestión APN.
+- Obtención de IP.
 - Comunicación HTTP.
 - Diagnóstico de red.
-- Transmisión de telemetría.
+
+### Interfaz
+
+UART.
+
+### Velocidad
+
+115200 bps.
+
+---
+
+# Alimentación
+
+Todos los dispositivos son alimentados mediante una fuente de corriente continua adecuada para las condiciones de operación del sistema.
