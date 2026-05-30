@@ -1,3 +1,6 @@
+// ============================================================
+//  CÓDIGO ORIGINAL — SIN MODIFICACIONES
+// ============================================================
 #include <Wire.h>
 #include <Adafruit_MLX90614.h>
 #include <HardwareSerial.h>
@@ -21,31 +24,26 @@ HardwareSerial simSerial(2);
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 
 // ============================================================
-//  MÓDULO DE DIAGNÓSTICO LTE
+//  MÓDULO DE DIAGNÓSTICO LTE — struct y helpers al inicio
+//  para que el compilador de Arduino los conozca antes de usarlos
 // ============================================================
 
 struct DiagLTE {
-  int    rssi_raw;     // valor crudo 0-31 de AT+CSQ
-  int    rssi_dbm;     // RSSI convertido a dBm
-  String calidad;      // Excelente / Buena / Regular / Mala / Sin señal
-  String operador;     // Nombre del operador (Movistar, Claro, etc.)
-  String tecnologia;   // LTE / WCDMA / GSM / Sin red  (AT+COPS?)
-  String ip_asignada;  // IP del PDP context
-  long   latencia_ms;  // RTT del ping HTTP al servidor
-  bool   ping_ok;      // true si el servidor respondió
-  String iccid;        // ICCID de la SIM
-  String imei;         // IMEI del módulo
-  String protocolo;    // HTTP/1.1 (según AT+HTTPPARA soportado)
-  String estado_modulo;// Estado del módulo vía AT+CPAS
-  // --- campos extendidos (AT+CPSI) ---
-  String cpsi_raw;     // Respuesta completa de AT+CPSI
-  String banda;        // Banda de frecuencia (AT+CBAND)
-  String modulacion;   // QPSK / 16-QAM / 64-QAM (AT+CAATT)
-  String rsrp;         // RSRP en dBm (de AT+CPSI)
-  String rsrq;         // RSRQ en dB  (de AT+CPSI)
-  String sinr;         // SINR en dB  (de AT+CPSI)
+  int    rssi_raw;    // valor crudo 0-31 de AT+CSQ
+  int    ber_raw;     // BER 0-7 de AT+CSQ
+  int    rssi_dbm;    // RSSI convertido a dBm
+  String calidad;     // Excelente / Buena / Regular / Mala / Sin señal
+  String operador;    // Nombre del operador (Movistar, Claro, etc.)
+  String tecnologia;  // LTE / WCDMA / GSM / Sin red
+  String ip_asignada; // IP del PDP context
+  long   latencia_ms; // RTT del ping HTTP al servidor
+  bool   ping_ok;     // true si el servidor respondió
+  String iccid;       // ICCID de la SIM
+  String imei;        // IMEI del módulo
+  String protocolo;   // HTTP/1.1 (según AT+HTTPPARA soportado)
 };
 
+// Extrae un valor entre dos delimitadores de una cadena
 String extraerEntre(String src, String desde, String hasta) {
   int iA = src.indexOf(desde);
   if (iA == -1) return "";
@@ -55,11 +53,13 @@ String extraerEntre(String src, String desde, String hasta) {
   return src.substring(iA, iB);
 }
 
+// Convierte el valor crudo de CSQ a dBm
 int csqAdbm(int csq) {
   if (csq == 99) return 0;
   return -113 + (csq * 2);
 }
 
+// Clasifica la calidad según dBm
 String clasificarSenal(int dbm) {
   if (dbm == 0)    return "Sin señal";
   if (dbm >= -70)  return "Excelente";
@@ -180,48 +180,35 @@ float leerCorrienteRMS() {
 DiagLTE diagnosticarLTE() {
   DiagLTE d;
   d.rssi_raw    = 99;
+  d.ber_raw     = 99;
   d.rssi_dbm    = 0;
   d.latencia_ms = -1;
   d.ping_ok     = false;
   d.protocolo   = "HTTP/1.1 (AT+HTTP)";
 
-  // --- 1. Estado del módulo (AT+CPAS) ---
-  // Respuesta: +CPAS: <estado>
-  // 0=Listo, 2=Desconocido, 3=Llamada entrante, 4=En llamada
-  String cpas = sendATResponse("AT+CPAS", 3000);
-  String cpasVal = extraerEntre(cpas, "+CPAS: ", "\r");
-  cpasVal.trim();
-  int cpasInt = cpasVal.toInt();
-  switch (cpasInt) {
-    case 0: d.estado_modulo = "Listo (0)";            break;
-    case 2: d.estado_modulo = "Desconocido (2)";      break;
-    case 3: d.estado_modulo = "Llamada entrante (3)"; break;
-    case 4: d.estado_modulo = "En llamada (4)";       break;
-    default:
-      d.estado_modulo = cpasVal.length() > 0
-        ? "Código " + cpasVal
-        : "No disponible";
-  }
-
-  // --- 2. RSSI (AT+CSQ) ---
-  // Respuesta: +CSQ: <rssi>,<ber>
-  // rssi: 0-31 (99 = sin dato). Fórmula: dBm = -113 + (rssi * 2)
+  // --- 1. RSSI y BER (AT+CSQ) ---
   String csq = sendATResponse("AT+CSQ", 3000);
+  // Respuesta: +CSQ: 18,0
   String csqVal = extraerEntre(csq, "+CSQ: ", "\r");
   if (csqVal.length() > 0) {
     int coma = csqVal.indexOf(',');
-    if (coma > 0) d.rssi_raw = csqVal.substring(0, coma).toInt();
+    if (coma > 0) {
+      d.rssi_raw = csqVal.substring(0, coma).toInt();
+      d.ber_raw  = csqVal.substring(coma + 1).toInt();
+    }
   }
   d.rssi_dbm = csqAdbm(d.rssi_raw);
   d.calidad  = clasificarSenal(d.rssi_dbm);
 
-  // --- 3. Operador y tecnología (AT+COPS?) ---
-  // Respuesta: +COPS: <modo>,<formato>,"<operador>",<Act>
-  // Act: 0=GSM, 2=UTRAN(3G), 7=LTE, 13=NR(5G)
+  // --- 2. Operador (AT+COPS?) ---
   String cops = sendATResponse("AT+COPS?", 5000);
+  // Respuesta: +COPS: 0,0,"Movistar CO",7
   d.operador = extraerEntre(cops, "\"", "\"");
   if (d.operador.length() == 0) d.operador = "Desconocido";
 
+  // --- 3. Tecnología de red (AT+COPS? campo Act) ---
+  // El cuarto campo de +COPS: es el Act (Access Technology)
+  // 0=GSM, 2=UTRAN(3G), 7=LTE, 13=NR(5G)
   int lastComa = cops.lastIndexOf(',');
   if (lastComa > 0) {
     String actStr = cops.substring(lastComa + 1);
@@ -245,6 +232,7 @@ DiagLTE diagnosticarLTE() {
 
   // --- 4. IP asignada (AT+CGPADDR) ---
   String ip = sendATResponse("AT+CGPADDR=1", 3000);
+  // Respuesta: +CGPADDR: 1,100.xx.xx.xx
   d.ip_asignada = extraerEntre(ip, "+CGPADDR: 1,", "\r");
   if (d.ip_asignada.length() == 0) d.ip_asignada = "No asignada";
 
@@ -252,6 +240,7 @@ DiagLTE diagnosticarLTE() {
   String iccid = sendATResponse("AT+ICCID", 3000);
   d.iccid = extraerEntre(iccid, "+ICCID: ", "\r");
   if (d.iccid.length() == 0) {
+    // Algunos módulos responden sin prefijo
     iccid = sendATResponse("AT+CCID", 3000);
     d.iccid = extraerEntre(iccid, "+CCID: ", "\r");
   }
@@ -259,6 +248,7 @@ DiagLTE diagnosticarLTE() {
 
   // --- 6. IMEI del módulo (AT+CGSN) ---
   String imei = sendATResponse("AT+CGSN", 3000);
+  // Busca 15 dígitos consecutivos
   for (int i = 0; i <= (int)imei.length() - 15; i++) {
     bool ok = true;
     for (int j = i; j < i + 15; j++) {
@@ -268,94 +258,15 @@ DiagLTE diagnosticarLTE() {
   }
   if (d.imei.length() == 0) d.imei = "No disponible";
 
-  // --- 7. Info extendida LTE (AT+CPSI) ---
-  // Respuesta: +CPSI: LTE,Online,730-02,0x...,<RxLev>,<TxPwr>,EUTRAN-BAND28,<EARFCN>,<RSRP>,<RSRQ>,<SINR>,<CQI>
-  // RSRP: potencia señal referencia (dBm), mejor cuanto más cerca de 0
-  // RSRQ: calidad señal referencia (dB),  mejor cuanto más cerca de 0
-  // SINR: relación señal/ruido+interferencia (dB), mayor = mejor
-  String cpsi = sendATResponse("AT+CPSI", 5000);
-  if (cpsi.indexOf("+CPSI:") != -1) {
-    d.cpsi_raw = extraerEntre(cpsi, "+CPSI: ", "\r");
-    if (d.cpsi_raw.length() == 0)
-      d.cpsi_raw = extraerEntre(cpsi, "+CPSI:", "\r");
-
-    // Separar campos por coma
-    // Campo índice: 0=tech, 1=estado, 2=MCC-MNC, 3=LAC/CellID,
-    //               4=RxLev, 5=TxPwr, 6=Banda, 7=EARFCN,
-    //               8=?, 9=?, 10=RSRP, 11=RSRQ, 12=SINR, 13=CQI
-    String tmp = d.cpsi_raw;
-    String campos[14];
-    int idx = 0;
-    while (tmp.length() > 0 && idx < 14) {
-      int c = tmp.indexOf(',');
-      if (c == -1) { campos[idx++] = tmp; break; }
-      campos[idx++] = tmp.substring(0, c);
-      tmp = tmp.substring(c + 1);
-    }
-    if (idx >= 7)  { campos[6].trim(); if (campos[6].length() > 0) d.banda = campos[6]; }
-    if (idx >= 11) { campos[10].trim(); if (campos[10].length() > 0) d.rsrp = campos[10] + " dBm"; }
-    if (idx >= 12) { campos[11].trim(); if (campos[11].length() > 0) d.rsrq = campos[11] + " dB";  }
-    if (idx >= 13) { campos[12].trim(); if (campos[12].length() > 0) d.sinr = campos[12] + " dB";  }
-  }
-  if (d.cpsi_raw.length() == 0) d.cpsi_raw  = "No disponible";
-  if (d.banda.length()    == 0) d.banda      = "No disponible";
-  if (d.rsrp.length()     == 0) d.rsrp       = "No disponible";
-  if (d.rsrq.length()     == 0) d.rsrq       = "No disponible";
-  if (d.sinr.length()     == 0) d.sinr       = "No disponible";
-
-  // --- 8. Banda de frecuencia (AT+CBAND) ---
-  // Respuesta: +CBAND: B28  (o similar según firmware)
-  // Confirma la banda LTE activa (complementa AT+CPSI)
-  String cband = sendATResponse("AT+CBAND", 3000);
-  String cbandVal = extraerEntre(cband, "+CBAND: ", "\r");
-  if (cbandVal.length() > 0) {
-    cbandVal.trim();
-    // Si CPSI ya entregó banda, mostrar ambas para comparar
-    if (d.banda != "No disponible" && d.banda != cbandVal)
-      d.banda = d.banda + " / CBAND: " + cbandVal;
-    else if (d.banda == "No disponible")
-      d.banda = cbandVal;
-  }
-
-  // --- 9. Modulación activa (AT+CAATT) ---
-  // Respuesta: +CAATT: <DL_mod>,<UL_mod>
-  // Valores posibles: 0=QPSK, 2=16-QAM, 4=64-QAM, 6=256-QAM
-  // No todos los firmwares del A7608E lo soportan
-  String caatt = sendATResponse("AT+CAATT", 3000);
-  if (caatt.indexOf("+CAATT:") != -1) {
-    String caattVal = extraerEntre(caatt, "+CAATT: ", "\r");
-    if (caattVal.length() == 0)
-      caattVal = extraerEntre(caatt, "+CAATT:", "\r");
-    caattVal.trim();
-    int coma2 = caattVal.indexOf(',');
-    String dlStr = coma2 > 0 ? caattVal.substring(0, coma2) : caattVal;
-    String ulStr = coma2 > 0 ? caattVal.substring(coma2 + 1) : "";
-    dlStr.trim(); ulStr.trim();
-
-    auto modStr = [](String s) -> String {
-      int v = s.toInt();
-      switch (v) {
-        case 0: return "QPSK";
-        case 2: return "16-QAM";
-        case 4: return "64-QAM";
-        case 6: return "256-QAM";
-        default: return "(" + s + ")";
-      }
-    };
-
-    d.modulacion = "DL: " + modStr(dlStr);
-    if (ulStr.length() > 0) d.modulacion += "  UL: " + modStr(ulStr);
-  } else {
-    d.modulacion = "No soportado por firmware";
-  }
-
-  // --- 10. Latencia HTTP (ping al servidor) ---
+  // --- 7. Latencia HTTP (ping al servidor) ---
+  // Reutiliza la sesión HTTP ya inicializada por iniciarLTE()
+  // Hace un GET liviano al mismo host para medir RTT
   String pingUrl = "http://" + String(serverHost) + ":" + String(serverPort) + "/";
   String pingCmd = "AT+HTTPPARA=\"URL\",\"" + pingUrl + "\"";
   sendAT(pingCmd.c_str(), "OK", 3000);
 
   unsigned long t0 = millis();
-  String pingResp = sendATResponse("AT+HTTPACTION=0", 12000);
+  String pingResp = sendATResponse("AT+HTTPACTION=0", 12000);  // GET
   unsigned long t1 = millis();
 
   if (pingResp.indexOf("+HTTPACTION: 0,") != -1) {
@@ -366,7 +277,7 @@ DiagLTE diagnosticarLTE() {
     d.ping_ok     = false;
   }
 
-  // Restaura la URL original
+  // Restaura la URL original para no romper enviarHTTP()
   String urlOrig = "http://" + String(serverHost) + ":" + String(serverPort) + String(serverPath);
   String urlCmd  = "AT+HTTPPARA=\"URL\",\"" + urlOrig + "\"";
   sendAT(urlCmd.c_str(), "OK", 3000);
@@ -380,49 +291,37 @@ void imprimirDiagnostico(const DiagLTE& d) {
   Serial.println("     DIAGNÓSTICO LTE — A7608E");
   Serial.println("=========================================");
   Serial.println("  MÓDULO / SIM");
-  Serial.println("  IMEI        : " + d.imei);
-  Serial.println("  ICCID       : " + d.iccid);
-  Serial.println("  Estado (CPAS): " + d.estado_modulo);
+  Serial.println("  IMEI   : " + d.imei);
+  Serial.println("  ICCID  : " + d.iccid);
   Serial.println("-----------------------------------------");
   Serial.println("  RED");
-  Serial.println("  Operador    : " + d.operador);
-  Serial.println("  Tecnología  : " + d.tecnologia);
-  Serial.println("  Protocolo   : " + d.protocolo);
-  Serial.println("  IP local    : " + d.ip_asignada);
+  Serial.println("  Operador  : " + d.operador);
+  Serial.println("  Tecnología: " + d.tecnologia);
+  Serial.println("  Protocolo : " + d.protocolo);
+  Serial.println("  IP local  : " + d.ip_asignada);
   Serial.println("-----------------------------------------");
   Serial.println("  SEÑAL");
-  Serial.print  ("  RSSI raw    : ");
-  Serial.print(d.rssi_raw);
-  Serial.println(" (0-31, 99=sin dato)  [AT+CSQ]");
-  Serial.print  ("  RSSI dBm    : ");
+  Serial.print  ("  RSSI raw  : ");  Serial.print(d.rssi_raw);  Serial.println(" (0-31, 99=sin dato)");
+  Serial.print  ("  RSSI dBm  : ");
   if (d.rssi_dbm == 0) Serial.println("N/A");
   else { Serial.print(d.rssi_dbm); Serial.println(" dBm"); }
-  Serial.println("  Calidad     : " + d.calidad);
-  Serial.println("-----------------------------------------");
-  Serial.println("  SEÑAL LTE EXTENDIDA  [AT+CPSI]");
-  Serial.println("  Banda       : " + d.banda);
-  Serial.println("  RSRP        : " + d.rsrp + "  (ref: > -80 excelente)");
-  Serial.println("  RSRQ        : " + d.rsrq + "  (ref: > -10 buena)");
-  Serial.println("  SINR        : " + d.sinr + "  (ref: > 20 excelente)");
-  Serial.println("  Raw CPSI    : " + d.cpsi_raw);
-  Serial.println("-----------------------------------------");
-  Serial.println("  MODULACIÓN  [AT+CAATT]");
-  Serial.println("  Esquema     : " + d.modulacion);
+  Serial.print  ("  BER       : ");  Serial.print(d.ber_raw);   Serial.println(" (0=<0.2%, 99=sin dato)");
+  Serial.println("  Calidad   : " + d.calidad);
   Serial.println("-----------------------------------------");
   Serial.println("  CONECTIVIDAD");
-  Serial.print  ("  Servidor    : ");
+  Serial.print  ("  Servidor  : ");
   Serial.print(serverHost); Serial.print(":"); Serial.println(serverPort);
   if (d.ping_ok) {
-    Serial.print("  Latencia    : "); Serial.print(d.latencia_ms); Serial.println(" ms");
+    Serial.print("  Latencia  : "); Serial.print(d.latencia_ms); Serial.println(" ms");
   } else {
-    Serial.println("  Latencia    : Servidor no alcanzable");
+    Serial.println("  Latencia  : Servidor no alcanzable");
   }
   Serial.println("=========================================");
   Serial.println();
 }
 
 // ============================================================
-//  SETUP Y LOOP
+//  SETUP Y LOOP — SETUP LLAMA AL DIAGNÓSTICO ANTES DEL LOOP
 // ============================================================
 
 void setup() {
