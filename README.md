@@ -1,189 +1,179 @@
-# Sistema IoT de Monitoreo Remoto para Motores Eléctricos mediante Comunicación LTE
+# Sistema IoT para Monitoreo Remoto de Motores Eléctricos mediante Comunicación LTE
 
 ## Descripción
 
-Este proyecto presenta el diseño e implementación de un sistema IoT para el monitoreo remoto de motores eléctricos utilizando comunicación celular LTE.
+Este proyecto presenta el diseño e implementación de una plataforma IoT para el monitoreo remoto de motores eléctricos utilizando comunicación celular LTE y servicios cloud.
 
-La solución permite adquirir variables operativas críticas del motor, transmitirlas mediante una red celular hacia una infraestructura en la nube y visualizarlas en tiempo real a través de una plataforma web.
+La solución permite adquirir variables eléctricas y térmicas del motor, transmitirlas mediante redes móviles hacia un servidor remoto alojado en AWS y visualizarlas en tiempo real mediante una interfaz web.
 
-A diferencia de los sistemas de monitoreo tradicionales basados en redes locales o Wi-Fi, esta propuesta utiliza comunicación LTE mediante el módulo A7608SA-H, permitiendo supervisar equipos ubicados en zonas remotas sin depender de infraestructura de red existente.
-
-El sistema está compuesto por un nodo de adquisición basado en ESP32, sensores industriales, un módulo de comunicación LTE, una infraestructura de procesamiento en AWS y una interfaz de visualización desarrollada en Streamlit.
+El sistema fue diseñado para operar en ubicaciones donde no existe conectividad Wi-Fi o infraestructura de red local, utilizando el módulo LTE A7608SA-H como medio principal de comunicación.
 
 ---
 
-# Objetivo General
+## Objetivo General
 
 Diseñar e implementar un sistema IoT para el monitoreo remoto de motores eléctricos mediante comunicación LTE, permitiendo la adquisición, transmisión, almacenamiento y visualización de variables operativas en tiempo real.
 
 ---
 
-# Características Principales
+## Características
 
-✅ Comunicación LTE independiente de redes Wi-Fi.
-
-✅ Monitoreo remoto desde cualquier ubicación.
-
-✅ Adquisición de corriente RMS.
-
-✅ Monitoreo de temperatura ambiente.
-
-✅ Monitoreo de temperatura superficial del motor.
-
-✅ Almacenamiento histórico de datos.
-
-✅ Dashboard web en tiempo real.
-
-✅ Arquitectura basada en servicios cloud.
-
-✅ Detección de pérdida de comunicación.
+- Comunicación LTE mediante A7608SA-H.
+- Monitoreo remoto desde cualquier ubicación.
+- Medición de corriente RMS.
+- Monitoreo de temperatura ambiente.
+- Monitoreo de temperatura superficial del motor.
+- Almacenamiento histórico.
+- Dashboard web en tiempo real.
+- Infraestructura cloud en AWS.
+- Diagnóstico de calidad de señal LTE.
+- Identificación automática de operador celular.
+- Medición de latencia de comunicación.
 
 ---
 
-# Arquitectura General
+## Arquitectura General
 
 ```text
-┌─────────────────────────┐
-│     Motor Eléctrico     │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Sensores                │
-│                         │
-│ SCT-013                 │
-│ MLX90614                │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ ESP32                   │
-│ Procesamiento Local     │
-└────────────┬────────────┘
-             │ UART
-             ▼
-┌─────────────────────────┐
-│ A7608SA-H LTE           │
-│ Comunicación Celular    │
-└────────────┬────────────┘
-             │
-             ▼
-         Internet
-             │
-             ▼
-┌─────────────────────────┐
-│ AWS EC2                 │
-│ Ubuntu Server           │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Backend Node.js         │
-│ API REST                │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ SQLite                  │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Dashboard Streamlit     │
-└─────────────────────────┘
+Motor Eléctrico
+        │
+        ▼
+ ┌───────────────┐
+ │   SCT-013     │
+ └──────┬────────┘
+        │
+ ┌──────▼────────┐
+ │   MLX90614    │
+ └──────┬────────┘
+        │
+        ▼
+ ┌───────────────┐
+ │     ESP32     │
+ └──────┬────────┘
+        │ UART
+        ▼
+ ┌───────────────┐
+ │  A7608SA-H    │
+ │     LTE       │
+ └──────┬────────┘
+        │
+     Internet
+        │
+        ▼
+ ┌───────────────┐
+ │   AWS EC2     │
+ └──────┬────────┘
+        │
+        ▼
+ ┌───────────────┐
+ │ Node.js API   │
+ └──────┬────────┘
+        │
+        ▼
+ ┌───────────────┐
+ │    SQLite     │
+ └──────┬────────┘
+        │
+        ▼
+ ┌───────────────┐
+ │  Streamlit    │
+ └───────────────┘
 ```
 
 ---
 
-# Comunicación LTE
+## Variables Monitoreadas
 
-La comunicación remota constituye el núcleo de la solución.
+### Temperatura Ambiente
 
-El sistema emplea un módulo LTE A7608SA-H conectado al ESP32 mediante interfaz UART.
+Sensor:
 
-Las variables adquiridas son encapsuladas en formato JSON y transmitidas mediante solicitudes HTTP hacia un servidor desplegado en AWS EC2.
+MLX90614
 
-Esta arquitectura permite:
+Unidad:
 
-- Operación en ubicaciones remotas.
-- Eliminación de dependencia de redes Wi-Fi.
-- Cobertura geográfica ampliada.
-- Monitoreo en tiempo real.
-- Escalabilidad para múltiples dispositivos.
+°C
 
 ---
 
-# Hardware Utilizado
+### Temperatura Superficial del Motor
 
-## ESP32
+Sensor:
 
-Microcontrolador encargado de:
+MLX90614
 
-- Adquisición de sensores.
-- Procesamiento local.
-- Cálculo RMS.
-- Gestión de comunicaciones.
+Unidad:
 
-## SCT-013
-
-Sensor de corriente no invasivo utilizado para medir el consumo eléctrico del motor.
-
-Características:
-
-- Medición AC.
-- Transformador de corriente.
-- Instalación sin modificar el circuito de potencia.
-
-## MLX90614
-
-Sensor infrarrojo utilizado para monitorear:
-
-- Temperatura ambiente.
-- Temperatura superficial del motor.
-
-Características:
-
-- Comunicación I2C.
-- Medición sin contacto.
-- Alta precisión.
-
-## A7608SA-H
-
-Módulo LTE utilizado para:
-
-- Conexión a Internet mediante red celular.
-- Transmisión HTTP.
-- Comunicación remota con el servidor.
+°C
 
 ---
 
-# Procesamiento de Corriente
+### Corriente RMS
 
-La corriente adquirida mediante el SCT-013 es procesada en el ESP32 para obtener el valor RMS.
+Sensor:
 
-Fórmula utilizada:
+SCT-013
 
-I_RMS = √[(1/N) Σ(Ii²)]
+Unidad:
 
-Donde:
-
-- Ii corresponde a cada muestra adquirida.
-- N es el número total de muestras.
-
-El cálculo RMS permite estimar la carga eléctrica del motor y detectar variaciones de consumo.
+A
 
 ---
 
-# Infraestructura Cloud
+## Comunicación LTE
 
-La solución utiliza Amazon Web Services (AWS).
+La comunicación constituye el núcleo del sistema.
 
-## Servidor
+El ESP32 transmite los datos utilizando el módulo celular A7608SA-H mediante solicitudes HTTP sobre la red LTE.
 
-- Amazon EC2
-- Ubuntu Server 24.04 LTS
+Los datos son enviados en formato JSON hacia una API REST desplegada en AWS.
 
-## Servicios Ejecutados
+Ejemplo:
+
+```json
+{
+  "temp_ambiente": 27.4,
+  "temp_objeto": 61.8,
+  "corriente": 3.25
+}
+```
+
+---
+
+## Diagnóstico LTE
+
+El firmware incorpora un módulo de diagnóstico capaz de obtener:
+
+- Intensidad de señal RSSI.
+- BER (Bit Error Rate).
+- Operador celular.
+- Tecnología de acceso.
+- Dirección IP asignada.
+- ICCID.
+- IMEI.
+- Latencia hacia el servidor.
+
+Comandos utilizados:
+
+| Función | Comando |
+|----------|----------|
+| Estado módulo | AT |
+| Estado SIM | AT+CPIN? |
+| Registro en red | AT+CREG? |
+| Intensidad señal | AT+CSQ |
+| Operador | AT+COPS? |
+| Dirección IP | AT+CGPADDR |
+| HTTP POST | AT+HTTPACTION=1 |
+
+---
+
+## Infraestructura Cloud
+
+### AWS EC2
+
+Sistema operativo:
+
+Ubuntu Server 24.04 LTS
 
 ### Backend
 
@@ -193,69 +183,41 @@ Funciones:
 
 - Recepción de datos.
 - API REST.
-- Almacenamiento.
-- Consulta histórica.
+- Consultas históricas.
+- Gestión de almacenamiento.
 
 ### Base de Datos
 
 SQLite
 
-Variables almacenadas:
-
-- Temperatura ambiente.
-- Temperatura del motor.
-- Corriente RMS.
-- Marca temporal.
-
 ### Dashboard
 
 Streamlit
 
-Funciones:
+Visualización en tiempo real de:
 
-- Visualización en tiempo real.
-- Históricos.
-- Estado del sistema.
-- Detección de pérdida de señal.
+- Temperatura ambiente.
+- Temperatura del motor.
+- Corriente RMS.
+- Estado de comunicación.
 
 ---
 
-# Estructura del Repositorio
+## Estructura del Proyecto
 
 ```text
-SISTEMA-DE-MONITOREO-no-invasivo-MOTOR
-│
-├── firmware/
-│   └── sensor_lte_v2.ino
-│
-├── backend/
-│   ├── server.js
-│   ├── package.json
-│   └── package-lock.json
-│
-├── dashboard/
-│   ├── app.py
-│   └── requirements.txt
-│
-├── docs/
-│   ├── api.md
-│   ├── aws.md
-│   ├── arquitectura.md
-│   ├── hardware.md
-│   └── medicion_corriente.md
-│
-├── images/
-│
-├── LICENSE
-├── .gitignore
-└── README.md
+firmware/
+backend/
+dashboard/
+docs/
+images/
 ```
 
 ---
 
-# Instalación
+## Instalación
 
-## Backend
+### Backend
 
 ```bash
 cd backend
@@ -263,7 +225,7 @@ npm install
 node server.js
 ```
 
-## Dashboard
+### Dashboard
 
 ```bash
 cd dashboard
@@ -273,15 +235,23 @@ streamlit run app.py
 
 ---
 
-# Resultados
+## Tecnologías Utilizadas
 
-El sistema permite supervisar remotamente el estado operativo de motores eléctricos mediante comunicación LTE, proporcionando acceso a información en tiempo real desde cualquier ubicación con cobertura celular.
-
-La arquitectura implementada demuestra la viabilidad de integrar tecnologías IoT, comunicaciones móviles y servicios cloud para aplicaciones de monitoreo industrial y mantenimiento predictivo.
+- ESP32
+- MLX90614
+- SCT-013
+- A7608SA-H
+- LTE
+- HTTP
+- JSON
+- Node.js
+- SQLite
+- Streamlit
+- AWS EC2
 
 ---
 
-# Autores
+## Autor
 
 * Taufic Yusef Rapag Padilla
 * Alejandra Tuiran Ospino
