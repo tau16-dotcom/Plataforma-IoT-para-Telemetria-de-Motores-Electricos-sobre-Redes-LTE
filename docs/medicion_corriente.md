@@ -1,20 +1,65 @@
 # Medición de Corriente RMS
 
-La corriente del motor es adquirida mediante un sensor SCT-013 conectado al ESP32.
+## Introducción
 
-Para obtener una medida representativa de la corriente alterna consumida por el motor se calcula el valor RMS (Root Mean Square).
+La corriente consumida por el motor es adquirida mediante un SCT-013.
 
-## Ecuación
+Debido a que la señal es alterna, se utiliza el valor RMS como indicador representativo.
+
+---
+
+# Ecuación RMS
 
 Irms = √[(1/N) Σ(Ii²)]
 
 Donde:
 
-- Ii corresponde a cada muestra adquirida.
-- N es el número total de muestras.
+- Ii representa cada muestra.
+- N representa el número total de muestras.
 
-## Ventajas
+---
 
-- Permite estimar la carga del motor.
-- Detecta variaciones anormales de consumo.
-- Facilita estrategias de mantenimiento predictivo.
+# Implementación
+
+El firmware utiliza:
+
+```cpp
+#define MUESTRAS 1000
+```
+
+Se adquieren 1000 muestras del ADC.
+
+Posteriormente se calcula:
+
+1. Offset DC.
+2. Valor cuadrático medio.
+3. Raíz cuadrada.
+
+---
+
+# Calibración
+
+```cpp
+#define FACTOR_CAL 30.0
+```
+
+Permite ajustar la conversión a amperios reales.
+
+---
+
+# Umbral de Ruido
+
+```cpp
+#define UMBRAL_A 0.3
+```
+
+Corrientes inferiores a este valor son consideradas cero.
+
+---
+
+# Aplicaciones
+
+- Monitoreo de carga.
+- Detección de sobrecorriente.
+- Detección de fallas.
+- Mantenimiento predictivo.
